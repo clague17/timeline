@@ -11,6 +11,7 @@
     "@chakra-ui/react": "^1.7.2",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
+    "@upstash/redis": "^0.1.8",
     "cors": "^2.8.5",
     "framer-motion": "^4",
     "ioredis": "^4.28.2",

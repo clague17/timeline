@@ -1,9 +1,10 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 var querystring = require("querystring");
 var SpotifyWebApi = require("spotify-web-api-node");
-var Redis = require("ioredis");
+import { get, set } from "@upstash/redis";
 
 import type { NextApiRequest, NextApiResponse } from "next";
+import { access } from "fs";
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -19,10 +20,6 @@ var generateRandomString = function (length: Number): String {
   }
   return text;
 };
-
-let redis = new Redis(
-  "rediss://:90a384121e8940e7ae246e31b5f46d4b@usw1-charmed-man-32039.upstash.io:32039"
-);
 
 var scopes = ["user-read-private", "user-read-email"];
 var state = generateRandomString(16);
@@ -67,9 +64,17 @@ function maybeSetAuthCode(obj: SpotifyAuthSuccess): boolean {
         // console.log("The refresh token is " + data.body["refresh_token"]);
 
         // Set the access token on the API object to use it in later calls
-        spotifyApi.setAccessToken(data.body["access_token"]);
-        spotifyApi.setRefreshToken(data.body["refresh_token"]);
-        redis.set("spotifyAccess", spotifyApi);
+        var accessToken = data.body["access_token"];
+        var refreshToken = data.body["refresh_token"];
+        spotifyApi.setAccessToken(accessToken);
+        spotifyApi.setRefreshToken(refreshToken);
+        // save to redis
+        set("spotifyAccess", accessToken).catch((err) =>
+          console.log("couldn't save to redis")
+        );
+        set("spotifyRefresh", refreshToken).catch((err) =>
+          console.log("couldn't save to redis")
+        );
         return true;
       },
       function (err: any) {

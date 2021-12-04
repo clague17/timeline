@@ -6,18 +6,24 @@ const userInfo = {};
 
 export async function getStaticProps() {
   const res = await fetch("http://www.localhost:3000/api/get_user_info");
-  const name: string = await res.json().then((json) => json.url);
+  const name: string = await res.json().then((json) => {
+    console.log(json);
+    return json.display_name;
+  });
   console.log(name);
-  const user_name = "bob";
-  console.log(user_name);
+  var [firstName, lastName] = name.split(" ");
   return {
     props: {
-      user_name,
+      firstName,
     },
   };
 }
 
-const Authed = () => {
+interface AuthedProps {
+  firstName: string;
+}
+
+const Authed = ({ firstName }) => {
   return (
     <main className={styles.main}>
       <Box
@@ -27,7 +33,7 @@ const Authed = () => {
         rounded="lg"
         flexBasis={["auto", "45%"]}
       >
-        Welcome {"bob"}
+        Welcome {firstName}
       </Box>
       <Box
         as="a"
