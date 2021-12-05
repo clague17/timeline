@@ -1,54 +1,43 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-var SpotifyWebApi = require("spotify-web-api-node");
 import { get, set } from "@upstash/redis";
-import { fetchValidTokens } from "../../util/user_helpers";
-
-var SpotifyWebApi = require("spotify-web-api-node");
-
 import type { NextApiRequest, NextApiResponse } from "next";
+import cookie from "cookiejs";
 
-const spotifyObj = {
-  clientId: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET,
-};
+const lastApi = "http://ws.audioscrobbler.com";
+const localhost = "http://localhost:3000";
 
-var spotifyApi = new SpotifyWebApi(spotifyObj);
+interface request {
+  user: string;
+}
 
-var fetchTokens = Promise.all([get("spotifyAccess"), get("spotifyRefresh")])
-  .then(([access, refresh]) => {
-    spotifyApi.setAccessToken(access.data);
-    spotifyApi.setRefreshToken(refresh.data);
-  })
-  .catch((err) =>
-    console.log("Couldn't find the access or refresh tokens from redis: " + err)
-  );
+/** This function is specifically for formatting this route in the last.fm API
+ * https://www.last.fm/api/show/user.getInfo
+ */
 
-interface UserProfile {
-  country: string;
-  display_name: string;
-  email: string;
-  explicit_content: { filter_enabled: boolean; filter_locked: boolean };
-  external_urls: { spotify: string };
-  followers: { href: null; total: number };
-  href: string;
-  id: string;
-  images: [[Object]];
-  product: string;
-  type: string;
-  uri: string;
+function formatRequest(user: string): string {
+  const str: string =
+    lastApi +
+    `/2.0/?method=user.getinfo&user=${user}&api_key=${process.env.LAST_ID}&format=json`;
+  return str;
 }
 
 async function getUserInfoHandler(req: NextApiRequest, res: NextApiResponse) {
-  await fetchTokens;
-  var user: UserProfile = await spotifyApi
-    .getMe()
-    .then((data: any) => data.body)
-    .catch((err: any) => console.log(err));
+  const user: string = req.query.user as string;
+  const payload = await fetch(formatRequest(user))
+    .then((res) => res.json())
+    .catch((error) => {
+      return { error: true };
+    });
+  if (payload.error) {
+    console.log("errore");
+    res.redirect("/");
+  }
+  set(`${user}realname`, payload.realname);
   // const me = spotifyApi.getMe().then((data: any) => data.json());
   //   await runMiddleware(req, res, cors);
   //   var authorizeURL = spotifyApi.createAuthorizeURL(req.scopes, req.state);
-  console.log("sending over user-profile: ", user);
-  return res.status(200).json(user);
+  console.log("PAYLOAD: ", payload);
+  return res.redirect(localhost + "/authed");
 }
 
 export default getUserInfoHandler;
