@@ -1,7 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 var SpotifyWebApi = require("spotify-web-api-node");
 import { get, set } from "@upstash/redis";
-import { fetchValidTokens } from "../../util/user_helpers";
 
 var SpotifyWebApi = require("spotify-web-api-node");
 
