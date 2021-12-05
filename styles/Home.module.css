@@ -12,6 +12,11 @@
   align-items: center;
 }
 
+.usernameForm {
+  max-width: 20%;
+  min-width: 200px;
+}
+
 .footer {
   display: flex;
   flex: 1;

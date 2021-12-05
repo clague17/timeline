@@ -3,12 +3,30 @@ import type { NextPage, InferGetStaticPropsType } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import { Button, ButtonGroup } from "@chakra-ui/react";
+import {
+  Button,
+  Stack,
+  Input,
+  InputRightElement,
+  FormControl,
+} from "@chakra-ui/react";
 import Link from "next/link";
 
 // spotify things
 
-type Data = {
+type UserProfile = {
+  age: string;
+  bootstrap: string;
+  country: string;
+  gender: string;
+  image: [{}, {}, {}, {}];
+  name: string;
+  playcount: string;
+  playlists: string;
+  realname: string;
+  registered: { unixtime: string; text: number };
+  subscriber: string;
+  type: string;
   url: string;
 };
 
@@ -28,18 +46,42 @@ type Data = {
 //     });
 // };
 
-export async function getStaticProps() {
-  const res = await fetch("http://www.localhost:3000/api/get_data");
-  const spotifyAuthUrl: string = await res.json().then((json) => json.url);
+// export async function getStaticProps() {
+//   const res = await fetch("http://www.localhost:3000/api/get_data");
+//   const spotifyAuthUrl: string = await res.json().then((json) => json.url);
 
-  return {
-    props: {
-      spotifyAuthUrl,
-    },
+//   return {
+//     props: {
+//       spotifyAuthUrl,
+//     },
+//   };
+// }
+
+function Home() {
+  const [text, setText] = useState("");
+  const [isButtonLoading, setIsButtonLoading] = useState(false);
+
+  const usernameHandler = (event: any) => {
+    setText(event.target.value);
   };
-}
 
-function Home(props: InferGetStaticPropsType<typeof getStaticProps>) {
+  const validateUsername = async () => {
+    var req = `http://localhost:3000/api/get_user_info?user=${text}`;
+    setIsButtonLoading(true);
+    // call the api with text
+    const user = await fetch(req).then(
+      (value) =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(value);
+          }, 200);
+        })
+    );
+
+    console.log(user);
+    setIsButtonLoading(false);
+  };
+
   return (
     <div className={styles.container}>
       <Head>
@@ -48,11 +90,24 @@ function Home(props: InferGetStaticPropsType<typeof getStaticProps>) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <Link href={props.spotifyAuthUrl}>
-          <Button>Connect with Spotify</Button>
-        </Link>
+        <FormControl id="usernameForm" className={styles.usernameForm}>
+          <Stack spacing={4}>
+            <Input
+              placeholder="Lastfm username"
+              onChange={usernameHandler}
+              value={text}
+            />
+            <Button
+              isLoading={isButtonLoading}
+              onClick={validateUsername}
+              loadingText="Loading"
+            >
+              Connect with Lastfm
+            </Button>
+          </Stack>
+        </FormControl>
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          I hate <a href="https://spotify.com">Spotify!</a>
         </h1>
 
         <p className={styles.description}>

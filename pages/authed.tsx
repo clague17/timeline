@@ -1,29 +1,26 @@
 import type { NextPage, InferGetStaticPropsType } from "next";
+import { get, set } from "@upstash/redis";
 import styles from "../styles/Home.module.css";
 import { Heading, Box, Text } from "@chakra-ui/react";
 
 const userInfo = {};
 
 export async function getStaticProps() {
-  const res = await fetch("http://www.localhost:3000/api/get_user_info");
-  const name: string = await res.json().then((json) => {
-    console.log(json);
-    return json.display_name;
-  });
+  // TODO somehow get the username from the last page onto here
   console.log(name);
-  var [firstName, lastName] = name.split(" ");
+  var realname = get(name + "realname");
   return {
     props: {
-      firstName,
+      realname,
     },
   };
 }
 
-interface AuthedProps {
-  firstName: string;
+interface Props {
+  realname: string;
 }
 
-const Authed = ({ firstName }) => {
+const Authed = ({ realname }: Props) => {
   return (
     <main className={styles.main}>
       <Box
@@ -33,7 +30,7 @@ const Authed = ({ firstName }) => {
         rounded="lg"
         flexBasis={["auto", "45%"]}
       >
-        Welcome {firstName}
+        Welcome {realname}
       </Box>
       <Box
         as="a"
