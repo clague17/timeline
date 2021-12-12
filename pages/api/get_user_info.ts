@@ -1,7 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { get, set } from "@upstash/redis";
 import type { NextApiRequest, NextApiResponse } from "next";
-import cookie from "cookiejs";
 
 const lastApi = "http://ws.audioscrobbler.com";
 const localhost = "http://localhost:3000";
@@ -30,14 +29,12 @@ async function getUserInfoHandler(req: NextApiRequest, res: NextApiResponse) {
     });
   if (payload.error) {
     console.log("errore");
+    console.log("redirecting to home");
     res.redirect("/");
   }
-  set(`${user}realname`, payload.realname);
-  // const me = spotifyApi.getMe().then((data: any) => data.json());
-  //   await runMiddleware(req, res, cors);
-  //   var authorizeURL = spotifyApi.createAuthorizeURL(req.scopes, req.state);
-  console.log("PAYLOAD: ", payload);
-  return res.redirect(localhost + "/authed");
+  set("realname", payload.user.realname);
+  set("username", payload.user.name);
+  res.redirect("http://localhost:3000/authed");
 }
 
 export default getUserInfoHandler;
