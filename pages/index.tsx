@@ -30,33 +30,6 @@ type UserProfile = {
   url: string;
 };
 
-// const renderConnectSpotify = () => {
-//   return (
-
-//   );
-// };
-
-// const fetchSpotify = async function () {
-//   console.log("we're here");
-//   await fetch("/api/get_data")
-//     .then((res) => res.json())
-//     .then((obj) => setSpotifyAuthUrl(obj.url))
-//     .catch((err) => {
-//       console.log("Couldn't load spotify" + err);
-//     });
-// };
-
-// export async function getStaticProps() {
-//   const res = await fetch("http://www.localhost:3000/api/get_data");
-//   const spotifyAuthUrl: string = await res.json().then((json) => json.url);
-
-//   return {
-//     props: {
-//       spotifyAuthUrl,
-//     },
-//   };
-// }
-
 function Home() {
   const [text, setText] = useState("");
   const [isButtonLoading, setIsButtonLoading] = useState(false);
@@ -69,23 +42,22 @@ function Home() {
     var req = `http://localhost:3000/api/get_user_info?user=${text}`;
     setIsButtonLoading(true);
     // call the api with text
-    const user = await fetch(req).then(
+    await fetch(req).then(
       (value) =>
         new Promise((resolve) => {
           setTimeout(() => {
             resolve(value);
-          }, 200);
+          }, 2000);
         })
     );
 
-    console.log(user);
     setIsButtonLoading(false);
   };
 
   return (
     <div className={styles.container}>
       <Head>
-        <title>Create Next App</title>
+        <title>Timeline</title>
         <meta name="description" content="Get your music timeline" />
         <link rel="icon" href="/favicon.ico" />
       </Head>

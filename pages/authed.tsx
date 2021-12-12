@@ -3,12 +3,11 @@ import { get, set } from "@upstash/redis";
 import styles from "../styles/Home.module.css";
 import { Heading, Box, Text } from "@chakra-ui/react";
 
-const userInfo = {};
-
-export async function getStaticProps() {
-  // TODO somehow get the username from the last page onto here
-  console.log(name);
-  var realname = get(name + "realname");
+export async function getServerSideProps() {
+  var realname = await get("realname")
+    .then((res) => res.data)
+    .catch((error) => console.log(error));
+  console.log("we're here! " + realname);
   return {
     props: {
       realname,
@@ -16,11 +15,7 @@ export async function getStaticProps() {
   };
 }
 
-interface Props {
-  realname: string;
-}
-
-const Authed = ({ realname }: Props) => {
+const Authed = ({ realname }: any) => {
   return (
     <main className={styles.main}>
       <Box
