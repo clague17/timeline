@@ -34,17 +34,18 @@ function formatTopTracksRequest(
  */
 function formatRecentListensRequest(
   user: string,
+  startDate: number = startRange,
   endDate: number = startRange + secPerDay,
-  limit: number = 200,
-  page: number = 1
+  page: number = 1,
+  limit: number = 200
 ): string {
   const str: string =
     lastApi +
-    `/2.0/?method=user.getrecenttracks&user=${user}&limit=${limit}&from=${startRange}&to=${endDate}&page=${page}&api_key=${process.env.LAST_ID}&format=json`;
+    `/2.0/?method=user.getrecenttracks&user=${user}&limit=${limit}&from=${startDate}&to=${endDate}&page=${page}&api_key=${process.env.LAST_ID}&format=json`;
   return str;
 }
 
-const master = {};
+const master = { data: [] };
 
 /**
  * This function will take in the data json and parse the data into our internal representation
@@ -57,26 +58,34 @@ function addToMaster(data, currDate: number): boolean {
     console.log(`Error code: ${data["error"]} adding ${currDate} to file`);
     return true;
   }
-  master[currDate] = data["recenttracks"]["track"];
+  master["data"].push({
+    date: currDate,
+    streams: data["recenttracks"]["track"],
+  });
   return false;
 }
 
 // helper function
 function arePagesDoneHandler(data): boolean {
   let totalPages = parseInt(data["recenttracks"]["@attr"]["totalPages"]);
+  if (totalPages == 0) return true;
   let currPage = parseInt(data["recenttracks"]["@attr"]["page"]);
-  return totalPages == currPage;
+  console.log("TOTALPAGES: ", totalPages);
+  console.log("CURRPAGE: ", currPage);
+  return totalPages === currPage;
 }
 
 async function oneByOne(user: string, numDays: number) {
   var page: number = 1;
   var currDate: number = startRange;
-  var endDate: number = currDate + numDays * secPerDay;
+  var endDate: number = startRange + numDays * secPerDay;
 
   var arePagesDone: boolean;
   while (currDate < endDate) {
     let nextDay = currDate + secPerDay;
-    var payload = await fetch(formatRecentListensRequest(user, nextDay, page))
+    var payload = await fetch(
+      formatRecentListensRequest(user, currDate, nextDay, page)
+    )
       .then((res) => res.json())
       .catch((err) => err);
     console.log("PAYLOAD: ", payload);
@@ -95,7 +104,8 @@ async function oneByOne(user: string, numDays: number) {
 
 async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
-  await oneByOne(user, 2)
+  const days: number = parseInt(req.query.days as string);
+  await oneByOne(user, days)
     .then((res) => console.log(res))
     .then((err) => console.log(err));
 
