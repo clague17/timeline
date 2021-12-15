@@ -1,5 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { get, set } from "@upstash/redis";
+import { Main } from "../../util/types"
 
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -45,20 +46,21 @@ function formatRecentListensRequest(
   return str;
 }
 
-const master = { data: [] };
+
+const main = { data: [] };
 
 /**
  * This function will take in the data json and parse the data into our internal representation
  * @param data The payload data from the last.fm api
  * @returns boolean value. True if error, false if all good
  */
-function addToMaster(data, currDate: number): boolean {
+function addToMain(data, currDate: number): boolean {
   if (data["error"] != undefined) {
     // oooh maybe could write to file!
     console.log(`Error code: ${data["error"]} adding ${currDate} to file`);
     return true;
   }
-  master["data"].push({
+  main["data"].push({
     date: currDate,
     streams: data["recenttracks"]["track"],
   });
@@ -70,8 +72,8 @@ function arePagesDoneHandler(data): boolean {
   let totalPages = parseInt(data["recenttracks"]["@attr"]["totalPages"]);
   if (totalPages == 0) return true;
   let currPage = parseInt(data["recenttracks"]["@attr"]["page"]);
-  console.log("TOTALPAGES: ", totalPages);
-  console.log("CURRPAGE: ", currPage);
+  // console.log("TOTALPAGES: ", totalPages);
+  // console.log("CURRPAGE: ", currPage);
   return totalPages === currPage;
 }
 
@@ -88,8 +90,8 @@ async function oneByOne(user: string, numDays: number) {
     )
       .then((res) => res.json())
       .catch((err) => err);
-    console.log("PAYLOAD: ", payload);
-    var isError = addToMaster(payload, currDate);
+    // console.log("PAYLOAD: ", payload);
+    var isError = addToMain(payload, currDate);
     if (isError) return "ERROR";
     arePagesDone = arePagesDoneHandler(payload);
     if (arePagesDone) {
@@ -102,14 +104,17 @@ async function oneByOne(user: string, numDays: number) {
   }
 }
 
+function filterToIR(data: )
+
 async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
+  if (req.query.days == undefined) return res.status(400); // need to specify a day
   const days: number = parseInt(req.query.days as string);
   await oneByOne(user, days)
     .then((res) => console.log(res))
     .then((err) => console.log(err));
 
-  return res.status(200).json({ success: true, payload: master });
+  return res.status(200).json({ success: true, payload: main });
 }
 
 export default getSongsHandler;
