@@ -1,8 +1,9 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { get, set } from "@upstash/redis";
-import { Main } from "../../util/types"
+import { Main } from "../../util/types";
 
 import type { NextApiRequest, NextApiResponse } from "next";
+import { useTab } from "@chakra-ui/react";
 
 const startRange = 1609455600;
 const secPerDay = 3600 * 24;
@@ -45,7 +46,6 @@ function formatRecentListensRequest(
     `/2.0/?method=user.getrecenttracks&user=${user}&limit=${limit}&from=${startDate}&to=${endDate}&page=${page}&api_key=${process.env.LAST_ID}&format=json`;
   return str;
 }
-
 
 const main = { data: [] };
 
@@ -104,7 +104,57 @@ async function oneByOne(user: string, numDays: number) {
   }
 }
 
-function filterToIR(data: )
+function maybeAddLeadingZero(date: string): string {
+  return date.length > 1 ? date : "0" + date;
+}
+
+function formatToIR(rawData) {
+  // format name
+
+  // console.log(" check ", rawData["data"]);
+  let output = {};
+
+  rawData["data"].forEach((element) => {
+    var streams = element["streams"];
+    streams.forEach((stream) => {
+      var artist = stream["artist"]["#text"];
+      var song = stream["name"];
+      const newName = song + "^" + artist;
+      var streamDate = stream["date"]["uts"];
+      var dateUTS = new Date(Date.parse(stream["date"]["#text"]));
+      if (newName in output) {
+        if (
+          streamDate - output[newName]["days"].slice(-1).pop()["dayBoundary"] >=
+          secPerDay
+        ) {
+          // this stream happened in a new day
+          var day = {
+            dayBoundary: streamDate,
+            listensToday: 1,
+            day_text: `${dateUTS.getFullYear()}-${maybeAddLeadingZero(
+              (dateUTS.getMonth() + 1).toString()
+            )}-${maybeAddLeadingZero(dateUTS.getDate().toString())}`,
+          };
+          output[newName]["days"].push(day);
+        } else {
+          output[newName]["days"].slice(-1).pop()["listensToday"]++;
+        }
+        output[newName]["streams"].push(stream);
+        output[newName]["count"]++;
+      } else {
+        var day = {
+          dayBoundary: streamDate,
+          listensToday: 1,
+          day_text: `${dateUTS.getFullYear()}-${maybeAddLeadingZero(
+            (dateUTS.getMonth() + 1).toString()
+          )}-${maybeAddLeadingZero(dateUTS.getDate().toString())}`,
+        };
+        output[newName] = { count: 1, streams: [stream], days: [day] };
+      }
+    });
+  });
+  return output;
+}
 
 async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
@@ -114,7 +164,9 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
     .then((res) => console.log(res))
     .then((err) => console.log(err));
 
-  return res.status(200).json({ success: true, payload: main });
+  var real = formatToIR(main);
+
+  return res.status(200).json({ success: true, payload: real });
 }
 
 export default getSongsHandler;
