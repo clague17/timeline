@@ -54,8 +54,8 @@ export type day = {
   song: { day: string; count: number };
 };
 
-interface CalendarData {
+export type CalendarData = {
   count: number;
   date: string; //'2021-12-29',
   level: number;
-}
+};

@@ -1,9 +1,12 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { get, set } from "@upstash/redis";
-import { Main } from "../../util/types";
-
 import type { NextApiRequest, NextApiResponse } from "next";
 import { useTab } from "@chakra-ui/react";
+import type { CalendarData } from "../../util/types";
+import {
+  maybeAddLeadingZero,
+  addMissingDaysTillYear,
+} from "../../util/user_helpers";
 
 const startRange = 1609455600;
 const secPerDay = 3600 * 24;
@@ -103,10 +106,6 @@ async function oneByOne(user: string, numDays: number) {
   }
 }
 
-function maybeAddLeadingZero(date: string): string {
-  return date.length > 1 ? date : "0" + date;
-}
-
 function formatToIR(rawData) {
   // format name
   let output = {};
@@ -157,12 +156,6 @@ function formatToIR(rawData) {
   return output;
 }
 
-interface CalendarData {
-  count: number;
-  date: string; //'2021-12-29',
-  level: number;
-}
-
 function listenLevel(listens: number) {
   switch (true) {
     case 0 < listens && listens < 3:
@@ -197,7 +190,7 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
         level: listenLevel(days["listensToday"]),
       };
     });
-    real = calendarData;
+    real = addMissingDaysTillYear(calendarData);
     console.log("THE DATA: ", calendarData);
   }
 

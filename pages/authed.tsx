@@ -4,7 +4,7 @@ import { get, set } from "@upstash/redis";
 import styles from "../styles/Home.module.css";
 import { Heading, Box, Text } from "@chakra-ui/react";
 import ActivityCalendar from "react-activity-calendar";
-import type CalendarData from "../util/types";
+import type { CalendarData } from "../util/types";
 
 export async function getServerSideProps() {
   var realname = await get("realname")
@@ -33,10 +33,13 @@ const Authed = ({ realname, username }: any) => {
     // Update the document title using the browser API
     var req =
       localhost + `/api/get_songs?user=${username}&days=${numberDays}&calendar`;
-    fetch(req).then((res) => {
-      console.log("RES! ", res);
-      // calendarData = res.json()["payload"];
-    });
+    fetch(req)
+      .then((res) => res.json())
+      .then((data) => {
+        calendarData = data["payload"];
+        console.log("calendarData: ", calendarData);
+        setIsFetchingCalendar(false);
+      });
   }, []);
 
   return (
