@@ -30,11 +30,12 @@ async function getUserInfoHandler(req: NextApiRequest, res: NextApiResponse) {
   if (payload.error) {
     console.log("errore");
     console.log("redirecting to home");
-    res.redirect("/");
+    return res.redirect("/");
   }
   set("realname", payload.user.realname);
   set("username", payload.user.name);
-  res.redirect("http://localhost:3000/authed");
+  console.log("redirecting to authed!");
+  return res.redirect(localhost + "/authed");
 }
 
 export default getUserInfoHandler;

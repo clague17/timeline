@@ -53,3 +53,9 @@ export type day = {
   // the logic here is that the day represents the earliest stream on that given day boundary. The count here represents the number of streams on that given associated day.
   song: { day: string; count: number };
 };
+
+interface CalendarData {
+  count: number;
+  date: string; //'2021-12-29',
+  level: number;
+}

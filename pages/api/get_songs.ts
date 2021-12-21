@@ -90,7 +90,6 @@ async function oneByOne(user: string, numDays: number) {
     )
       .then((res) => res.json())
       .catch((err) => err);
-    // console.log("PAYLOAD: ", payload);
     var isError = addToMain(payload, currDate);
     if (isError) return "ERROR";
     arePagesDone = arePagesDoneHandler(payload);
@@ -110,8 +109,6 @@ function maybeAddLeadingZero(date: string): string {
 
 function formatToIR(rawData) {
   // format name
-
-  // console.log(" check ", rawData["data"]);
   let output = {};
 
   rawData["data"].forEach((element) => {
@@ -120,6 +117,10 @@ function formatToIR(rawData) {
       var artist = stream["artist"]["#text"];
       var song = stream["name"];
       const newName = song + "^" + artist;
+      if (stream["@attr"] != undefined) {
+        // this is a problem. Basically the 'nowplaying' part of recent listens will break my api
+        return; // so we continue to the next one and just skip this entry
+      }
       var streamDate = stream["date"]["uts"];
       var dateUTS = new Date(Date.parse(stream["date"]["#text"]));
       if (newName in output) {
@@ -156,8 +157,28 @@ function formatToIR(rawData) {
   return output;
 }
 
+interface CalendarData {
+  count: number;
+  date: string; //'2021-12-29',
+  level: number;
+}
+
+function listenLevel(listens: number) {
+  switch (true) {
+    case 0 < listens && listens < 3:
+      return 1;
+    case 3 < listens && listens < 6:
+      return 2;
+    case 6 < listens && listens < 10:
+      return 3;
+    case listens > 10:
+      return 4;
+  }
+}
+
 async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
+  const calendar: string = req.query.calendar as string;
   if (req.query.days == undefined) return res.status(400); // need to specify a day
   const days: number = parseInt(req.query.days as string);
   await oneByOne(user, days)
@@ -165,6 +186,20 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
     .then((err) => console.log(err));
 
   var real = formatToIR(main);
+
+  if (calendar != undefined) {
+    // then we want the payload to be in the calendar format
+    var calendarData = Object.keys(real).map((entry) => {
+      var days = real[`${entry}`]["days"][0];
+      return {
+        count: days["listensToday"],
+        date: days["day_text"],
+        level: listenLevel(days["listensToday"]),
+      };
+    });
+    real = calendarData;
+    console.log("THE DATA: ", calendarData);
+  }
 
   return res.status(200).json({ success: true, payload: real });
 }
