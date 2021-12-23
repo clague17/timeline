@@ -4,7 +4,8 @@ import { get, set } from "@upstash/redis";
 import styles from "../styles/Home.module.css";
 import { Heading, Box, Text } from "@chakra-ui/react";
 import ActivityCalendar from "react-activity-calendar";
-import type { CalendarData } from "../util/types";
+import type { Day } from "../util/types";
+import { generateData } from "../util/user_helpers";
 
 export async function getServerSideProps() {
   var realname = await get("realname")
@@ -24,9 +25,10 @@ export async function getServerSideProps() {
 const localhost = "http://localhost:3000";
 
 const Authed = ({ realname, username }: any) => {
-  var [isFetchingCalendar, setIsFetchingCalendar] = useState(true);
+  var [isFetchingCalendarDays, setIsFetchingCalendarDays] = useState(true);
+  var [calendarDays, setCalendarDays] = useState([]);
+  var [songTitle, setSongTitle] = useState("");
   var numberDays = 2;
-  var calendarData: CalendarData[] = [];
 
   useEffect(() => {
     // Update the document title using the browser API
@@ -35,9 +37,10 @@ const Authed = ({ realname, username }: any) => {
     fetch(req)
       .then((res) => res.json())
       .then((data) => {
-        calendarData = data["payload"];
-        console.log("calendarData: ", calendarData);
-        setIsFetchingCalendar(false);
+        var [songTitle, days] = Object.entries(data["payload"])[10];
+        setSongTitle(songTitle);
+        setCalendarDays(days as any);
+        setIsFetchingCalendarDays(false);
       });
   }, []);
 
@@ -53,8 +56,9 @@ const Authed = ({ realname, username }: any) => {
         Welcome {realname}
       </Box>
       <Box>
+        <Text>{songTitle}</Text>
         <ActivityCalendar
-          data={calendarData}
+          data={calendarDays}
           labels={{
             legend: {
               less: "Less",
@@ -77,7 +81,7 @@ const Authed = ({ realname, username }: any) => {
             totalCount: "{{count}} listens in {{year}}",
             weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
           }}
-          loading={isFetchingCalendar}
+          loading={isFetchingCalendarDays}
         />
       </Box>
       <Box

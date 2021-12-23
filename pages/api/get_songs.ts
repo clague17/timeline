@@ -5,7 +5,7 @@ import { useTab } from "@chakra-ui/react";
 import type { CalendarData } from "../../util/types";
 import {
   maybeAddLeadingZero,
-  addMissingDaysTillYear,
+  normalizeCalendarDays,
   listenLevel,
 } from "../../util/user_helpers";
 
@@ -168,7 +168,6 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
 
   var real = formatToIR(main); // this is the streaming data for ALL the songs
   // we're gonna try and go about separating song by song.
-  console.log("real: ", real);
 
   if (calendar != undefined) {
     // then we want the payload to be in the calendar format
@@ -177,12 +176,14 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
       var days = real[`${entry}`]["days"].map((listen) => {
         // console.log("the listen: ", listen);
         return {
-          count: listen["listensToday"],
           date: listen["day_text"],
+          count: listen["listensToday"],
           level: listenLevel(listen["listensToday"]),
         };
       });
-      real[`${entry}`] = addMissingDaysTillYear(days);
+      real[`${entry}`] = normalizeCalendarDays(days);
+      console.log("THE CALENDAR DAYS: ", real[`${entry}`]);
+      // real[`${entry}`] = days;
     });
 
     // real = addMissingDaysTillYear(real);

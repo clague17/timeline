@@ -1,5 +1,15 @@
 import { get, set } from "@upstash/redis";
-import { CalendarData } from "./types";
+import { CalendarData, Day, Level } from "./types";
+import differenceInCalendarDays from "date-fns/differenceInCalendarDays";
+import eachDayOfInterval from "date-fns/eachDayOfInterval";
+import formatISO from "date-fns/formatISO";
+import getDay from "date-fns/getDay";
+import getMonth from "date-fns/getMonth";
+import nextDay from "date-fns/nextDay";
+import parseISO from "date-fns/parseISO";
+import subWeeks from "date-fns/subWeeks";
+import lastDayOfMonth from "date-fns/lastDayOfMonth";
+import type { Day as WeekDay } from "date-fns";
 
 export var fetchValidTokens = () =>
   Promise.all([get("spotifyAccess"), get("spotifyRefresh")])
@@ -14,8 +24,9 @@ export var fetchValidTokens = () =>
 
 const longMonths = [1, 3, 5, 7, 8, 10, 12];
 
-export function generateYear(data: CalendarData[]): CalendarData[] {
-  var output = [];
+/** Use [[normalizeCalendarDays]] instead of this!!! */
+export function generateYear(data: Day[]): Day[] {
+  var output: Day[] = [];
   var year = "2021";
   var month = 1;
   var day = 1;
@@ -32,7 +43,11 @@ export function generateYear(data: CalendarData[]): CalendarData[] {
       output.push(candidate);
       candidate = data.shift();
     } else {
-      output.push({ count: 0, date: today, level: 0 });
+      output.push({
+        date: today,
+        count: 0,
+        level: 0,
+      });
     }
     // update the day and month
     if (day == 28 && month == 2) {
@@ -55,9 +70,35 @@ export function generateYear(data: CalendarData[]): CalendarData[] {
   return output;
 }
 
-// This function works under the assumption that data is in sequential order
-export function addMissingDaysTillYear(data: CalendarData[]): CalendarData[] {
-  return generateYear(data);
+export function normalizeCalendarDays(days: Array<Day>): Array<Day> {
+  console.log("The days to normalize: ", days);
+  const daysMap = days.reduce((map, day) => {
+    map.set(day.date, day);
+    return map;
+  }, new Map<string, Day>());
+
+  var monthEnd = 11;
+  var monthStart = 0;
+
+  const yearStart = new Date().getFullYear();
+  const yearEnd = monthEnd < monthStart ? yearStart + 1 : yearStart;
+
+  return eachDayOfInterval({
+    start: new Date(yearStart, monthStart, 1),
+    end: lastDayOfMonth(new Date(yearEnd, monthEnd, 1)),
+  }).map((day) => {
+    const date = formatISO(day, { representation: "date" });
+
+    if (daysMap.has(date)) {
+      return daysMap.get(date) as Day;
+    }
+
+    return {
+      date,
+      count: 0,
+      level: 0,
+    };
+  });
 }
 
 export function maybeAddLeadingZero(date: string): string {
@@ -75,4 +116,31 @@ export function listenLevel(listens: number) {
     case listens > 10:
       return 4;
   }
+}
+
+export function generateData(monthStart = 0, monthEnd = 11): Array<Day> {
+  const MAX = 10;
+  const LEVELS = 5;
+
+  const yearStart = new Date().getFullYear();
+  const yearEnd = monthEnd < monthStart ? yearStart + 1 : yearStart;
+
+  const days = eachDayOfInterval({
+    start: new Date(yearStart, monthStart, 1),
+    end: lastDayOfMonth(new Date(yearEnd, monthEnd, 1)),
+  });
+
+  return days.map((date) => {
+    const count = Math.max(
+      0,
+      Math.round(Math.random() * MAX - Math.random() * (0.8 * MAX))
+    );
+    const level = Math.ceil(count / (MAX / (LEVELS - 1))) as Level;
+
+    return {
+      date: formatISO(date, { representation: "date" }),
+      count,
+      level,
+    };
+  });
 }
