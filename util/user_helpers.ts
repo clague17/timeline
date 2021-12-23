@@ -1,5 +1,4 @@
 import { get, set } from "@upstash/redis";
-import type { CalendarData } from "../../util/types";
 import { CalendarData } from "./types";
 
 export var fetchValidTokens = () =>
@@ -15,11 +14,12 @@ export var fetchValidTokens = () =>
 
 const longMonths = [1, 3, 5, 7, 8, 10, 12];
 
-export function generateYear(): CalendarData[] {
+export function generateYear(data: CalendarData[]): CalendarData[] {
   var output = [];
   var year = "2021";
   var month = 1;
   var day = 1;
+  var candidate = data.shift();
   for (var i = 0; i < 365; i++) {
     var today =
       year +
@@ -27,7 +27,13 @@ export function generateYear(): CalendarData[] {
       maybeAddLeadingZero(`${month}`) +
       "-" +
       maybeAddLeadingZero(`${day}`);
-    output.push({ count: 0, date: today, level: 0 });
+    // check if candidate fits here
+    if (candidate && candidate["date"] === today) {
+      output.push(candidate);
+      candidate = data.shift();
+    } else {
+      output.push({ count: 0, date: today, level: 0 });
+    }
     // update the day and month
     if (day == 28 && month == 2) {
       day = 1;
@@ -39,6 +45,9 @@ export function generateYear(): CalendarData[] {
         day = 1;
         month++;
       }
+    } else if (day == 31) {
+      day = 1;
+      month++;
     } else {
       day++;
     }
@@ -48,11 +57,22 @@ export function generateYear(): CalendarData[] {
 
 // This function works under the assumption that data is in sequential order
 export function addMissingDaysTillYear(data: CalendarData[]): CalendarData[] {
-  var allDays = generateYear();
-  allDays = data.concat(allDays.slice(data.length - 1));
-  return allDays;
+  return generateYear(data);
 }
 
 export function maybeAddLeadingZero(date: string): string {
   return date.length > 1 ? date : "0" + date;
+}
+
+export function listenLevel(listens: number) {
+  switch (true) {
+    case 0 < listens && listens < 3:
+      return 1;
+    case 3 < listens && listens < 6:
+      return 2;
+    case 6 < listens && listens < 10:
+      return 3;
+    case listens > 10:
+      return 4;
+  }
 }

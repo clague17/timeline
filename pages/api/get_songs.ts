@@ -6,6 +6,7 @@ import type { CalendarData } from "../../util/types";
 import {
   maybeAddLeadingZero,
   addMissingDaysTillYear,
+  listenLevel,
 } from "../../util/user_helpers";
 
 const startRange = 1609455600;
@@ -156,19 +157,6 @@ function formatToIR(rawData) {
   return output;
 }
 
-function listenLevel(listens: number) {
-  switch (true) {
-    case 0 < listens && listens < 3:
-      return 1;
-    case 3 < listens && listens < 6:
-      return 2;
-    case 6 < listens && listens < 10:
-      return 3;
-    case listens > 10:
-      return 4;
-  }
-}
-
 async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
   const calendar: string = req.query.calendar as string;
@@ -178,20 +166,27 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
     .then((res) => console.log(res))
     .then((err) => console.log(err));
 
-  var real = formatToIR(main);
+  var real = formatToIR(main); // this is the streaming data for ALL the songs
+  // we're gonna try and go about separating song by song.
+  console.log("real: ", real);
 
   if (calendar != undefined) {
     // then we want the payload to be in the calendar format
-    var calendarData = Object.keys(real).map((entry) => {
-      var days = real[`${entry}`]["days"][0];
-      return {
-        count: days["listensToday"],
-        date: days["day_text"],
-        level: listenLevel(days["listensToday"]),
-      };
+    Object.keys(real).forEach((entry) => {
+      // console.log("The song: ", entry);
+      var days = real[`${entry}`]["days"].map((listen) => {
+        // console.log("the listen: ", listen);
+        return {
+          count: listen["listensToday"],
+          date: listen["day_text"],
+          level: listenLevel(listen["listensToday"]),
+        };
+      });
+      real[`${entry}`] = addMissingDaysTillYear(days);
     });
-    real = addMissingDaysTillYear(calendarData);
-    console.log("THE DATA: ", calendarData);
+
+    // real = addMissingDaysTillYear(real);
+    // console.log("THE DATA: ", calendarData);
   }
 
   return res.status(200).json({ success: true, payload: real });

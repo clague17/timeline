@@ -27,7 +27,6 @@ const Authed = ({ realname, username }: any) => {
   var [isFetchingCalendar, setIsFetchingCalendar] = useState(true);
   var numberDays = 2;
   var calendarData: CalendarData[] = [];
-  var payload = "";
 
   useEffect(() => {
     // Update the document title using the browser API
