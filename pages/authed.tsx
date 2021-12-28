@@ -28,7 +28,8 @@ const Authed = ({ realname, username }: any) => {
   var [isFetchingCalendarDays, setIsFetchingCalendarDays] = useState(true);
   var [calendarDays, setCalendarDays] = useState([]);
   var [songTitle, setSongTitle] = useState("");
-  var numberDays = 2;
+
+  var numberDays = 5;
 
   useEffect(() => {
     // Update the document title using the browser API
@@ -37,7 +38,7 @@ const Authed = ({ realname, username }: any) => {
     fetch(req)
       .then((res) => res.json())
       .then((data) => {
-        var [songTitle, days] = Object.entries(data["payload"])[10];
+        var [songTitle, days] = Object.entries(data["payload"])[14];
         setSongTitle(songTitle);
         setCalendarDays(days as any);
         setIsFetchingCalendarDays(false);

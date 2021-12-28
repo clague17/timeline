@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { get, set } from "@upstash/redis";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { useTab } from "@chakra-ui/react";
+import { useTab, filter } from "@chakra-ui/react";
 import type { CalendarData } from "../../util/types";
 import {
   maybeAddLeadingZero,
@@ -113,6 +113,10 @@ function formatToIR(rawData) {
 
   rawData["data"].forEach((element) => {
     var streams = element["streams"];
+    if (streams["@attr"] != undefined) {
+      // this is a problem. Basically the 'nowplaying' part of recent listens will break my api
+      return; // so we continue to the next one and just skip this entry
+    }
     streams.forEach((stream) => {
       var artist = stream["artist"]["#text"];
       var song = stream["name"];
@@ -160,6 +164,7 @@ function formatToIR(rawData) {
 async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
   const calendar: string = req.query.calendar as string;
+  const debug: string = req.query.debug as string;
   if (req.query.days == undefined) return res.status(400); // need to specify a day
   const days: number = parseInt(req.query.days as string);
   await oneByOne(user, days)
@@ -171,7 +176,7 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
 
   if (calendar != undefined) {
     // then we want the payload to be in the calendar format
-    Object.keys(real).forEach((entry) => {
+    Object.keys(real).filter((entry) => {
       // console.log("The song: ", entry);
       var days = real[`${entry}`]["days"].map((listen) => {
         // console.log("the listen: ", listen);
@@ -181,8 +186,12 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
           level: listenLevel(listen["listensToday"]),
         };
       });
-      real[`${entry}`] = normalizeCalendarDays(days);
-      console.log("THE CALENDAR DAYS: ", real[`${entry}`]);
+      if (days.length > 1) {
+        real[`${entry}`] = normalizeCalendarDays(days);
+        return true;
+      }
+      return false;
+      // console.log("THE CALENDAR DAYS: ", real[`${entry}`]);
       // real[`${entry}`] = days;
     });
 

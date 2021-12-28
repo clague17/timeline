@@ -71,14 +71,14 @@ export function generateYear(data: Day[]): Day[] {
 }
 
 export function normalizeCalendarDays(days: Array<Day>): Array<Day> {
-  console.log("The days to normalize: ", days);
+  console.log("DAYS: ", days);
   const daysMap = days.reduce((map, day) => {
     map.set(day.date, day);
     return map;
   }, new Map<string, Day>());
 
-  var monthEnd = 11;
   var monthStart = 0;
+  var monthEnd = 11;
 
   const yearStart = new Date().getFullYear();
   const yearEnd = monthEnd < monthStart ? yearStart + 1 : yearStart;
