@@ -1,6 +1,9 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { get, set } from "@upstash/redis";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { doc, setDoc, getDoc } from "@firebase/firestore";
+import { firestore } from "../../firebase/clientApp";
+import { User } from "../../util/types";
 
 const lastApi = "http://ws.audioscrobbler.com";
 const localhost = "http://localhost:3000";
@@ -20,6 +23,49 @@ function formatRequest(user: string): string {
   return str;
 }
 
+const getOrCreateUser = async (username: string, realname: string) => {
+  const userRef = doc(firestore, "users", `${username}`);
+  const docSnap = await getDoc(userRef);
+
+  if (docSnap.exists()) {
+    console.log("The user gotten from firestore: ", docSnap.data);
+    return docSnap.data;
+  } else {
+    return await addUser(username, realname);
+  }
+};
+
+/**
+ *
+ * @param username the username to create
+ * @param realname the user's real name
+ * This function
+ * @returns a number 200 if user was added, a number 409 if the user alr exists
+ */
+const addUser = async (username: string, realname: string) => {
+  // get the current timestamp
+  const timestamp: string = Date.now().toString();
+  // create a pointer to our Document
+  const _user = doc(firestore, `users/${username}`);
+  // structure the todo data
+  const userData: User = {
+    username: username,
+    realname: realname,
+    songs: {},
+  };
+  try {
+    //add the Document
+    await setDoc(_user, userData);
+    //show a success message
+    console.log("Successfully created user: ", username);
+    return userData;
+    //reset fields
+  } catch (error) {
+    //show an error message
+    console.log("An error occurred while adding user");
+  }
+};
+
 async function getUserInfoHandler(req: NextApiRequest, res: NextApiResponse) {
   const user: string = req.query.user as string;
   const payload = await fetch(formatRequest(user))
@@ -34,7 +80,10 @@ async function getUserInfoHandler(req: NextApiRequest, res: NextApiResponse) {
   }
   set("realname", payload.user.realname);
   set("username", payload.user.name);
-  console.log("redirecting to authed!");
+
+  // Check if we have this user registered in our database
+  // if not, create a an entry under the users collection
+  await getOrCreateUser(payload.user.name, payload.user.realname);
   return res.redirect(localhost + "/authed");
 }
 

@@ -62,3 +62,9 @@ export interface Day {
 }
 
 export type CalendarData = Array<Day | undefined>;
+
+export type User = {
+  username: string;
+  realname: string;
+  songs: {};
+};
