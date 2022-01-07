@@ -4,8 +4,10 @@ import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { Button, Stack, Input, FormControl } from "@chakra-ui/react";
+import { useRouter } from "next/router";
 
 function Home() {
+  const router = useRouter();
   const [text, setText] = useState("");
   const [isButtonLoading, setIsButtonLoading] = useState(false);
 
@@ -13,12 +15,25 @@ function Home() {
     setText(event.target.value);
   };
 
+  const redirectToAuthed = () => {
+    // Make sure we're in the browser
+    if (typeof window !== "undefined") {
+      router.push("/authed");
+    }
+  };
+
   const validateUsername = async () => {
     var req = `http://localhost:3000/api/get_user_info?user=${text}`;
     setIsButtonLoading(true);
+    let isUsernameValid = false;
     // call the api with text
-    await fetch(req);
+    var data = await fetch(req)
+      .then((res) => res.json())
+      .then((data) => {
+        isUsernameValid = data.isUsernameValid;
+      });
     setIsButtonLoading(false);
+    if (isUsernameValid) redirectToAuthed();
   };
 
   return (

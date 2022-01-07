@@ -71,7 +71,6 @@ export function generateYear(data: Day[]): Day[] {
 }
 
 export function normalizeCalendarDays(days: Array<Day>): Array<Day> {
-  console.log("DAYS: ", days);
   const daysMap = days.reduce((map, day) => {
     map.set(day.date, day);
     return map;
@@ -80,7 +79,7 @@ export function normalizeCalendarDays(days: Array<Day>): Array<Day> {
   var monthStart = 0;
   var monthEnd = 11;
 
-  const yearStart = new Date().getFullYear();
+  const yearStart = new Date(1610013675 * 1000).getFullYear(); // NOTE THIS IS ANCHORING TO 2021, have to get unix timstamp to milliseconds before converting to Date
   const yearEnd = monthEnd < monthStart ? yearStart + 1 : yearStart;
 
   return eachDayOfInterval({

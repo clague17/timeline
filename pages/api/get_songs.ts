@@ -12,6 +12,7 @@ import {
 const startRange = 1609455600;
 const secPerDay = 3600 * 24;
 const secPerWeek = 604800;
+const endRange = 1641020399; // This is the last second of 2021
 
 const lastApi = "http://ws.audioscrobbler.com";
 
@@ -177,21 +178,24 @@ async function getSongsHandler(req: NextApiRequest, res: NextApiResponse) {
   if (calendar != undefined) {
     // then we want the payload to be in the calendar format
     Object.keys(real).filter((entry) => {
-      // console.log("The song: ", entry);
+      console.log("The song: ", entry);
+      var logger: boolean = false;
+      if (entry === "Nightline^Juche") logger = true;
       var days = real[`${entry}`]["days"].map((listen) => {
         // console.log("the listen: ", listen);
+        if (logger) console.log("DATA: ", listen);
         return {
           date: listen["day_text"],
           count: listen["listensToday"],
           level: listenLevel(listen["listensToday"]),
         };
       });
-      if (days.length > 1) {
+      if (days.length >= 1) {
         real[`${entry}`] = normalizeCalendarDays(days);
         return true;
       }
+      console.log("THE CALENDAR DAYS: ", real[`${entry}`]);
       return false;
-      // console.log("THE CALENDAR DAYS: ", real[`${entry}`]);
       // real[`${entry}`] = days;
     });
 

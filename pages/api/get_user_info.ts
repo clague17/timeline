@@ -80,11 +80,10 @@ async function getUserInfoHandler(req: NextApiRequest, res: NextApiResponse) {
   }
   set("realname", payload.user.realname);
   set("username", payload.user.name);
-
-  // Check if we have this user registered in our database
-  // if not, create a an entry under the users collection
-  await getOrCreateUser(payload.user.name, payload.user.realname);
-  return res.redirect(localhost + "/authed");
+  // TODO: Check if we have this user registered in our database
+  // if not, create an entry under the users collection
+  // await getOrCreateUser(payload.user.name, payload.user.realname);
+  return res.status(200).json({ success: true, isUsernameValid: true });
 }
 
 export default getUserInfoHandler;

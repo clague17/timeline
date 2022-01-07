@@ -11,7 +11,6 @@ export async function getServerSideProps() {
   var realname = await get("realname")
     .then((res) => res.data)
     .catch((error) => console.log(error));
-  console.log("we're here! " + realname);
 
   var username = await get("username").then((res) => res.data);
   return {
@@ -29,7 +28,7 @@ const Authed = ({ realname, username }: any) => {
   var [calendarDays, setCalendarDays] = useState([]);
   var [songTitle, setSongTitle] = useState("");
 
-  var numberDays = 5;
+  var numberDays = 10;
 
   useEffect(() => {
     // Update the document title using the browser API
@@ -38,9 +37,10 @@ const Authed = ({ realname, username }: any) => {
     fetch(req)
       .then((res) => res.json())
       .then((data) => {
-        var [songTitle, days] = Object.entries(data["payload"])[14];
+        var [songTitle, days] = Object.entries(data["payload"])[13]; // a random song
         setSongTitle(songTitle);
         setCalendarDays(days as any);
+
         setIsFetchingCalendarDays(false);
       });
   }, []);
